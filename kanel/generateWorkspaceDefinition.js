@@ -1,9 +1,8 @@
 // @ts-check
 
-const { recase } = require("@kristiandupont/recase");
-
-const toCamelCase = recase(null, "camel");
-exports.toCamelCase = toCamelCase;
+function toCamelCase(s) {
+  return s.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+}
 
 /**
  * @typedef {Object} EnrichedWorkspaceTableConfig

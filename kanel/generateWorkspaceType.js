@@ -1,10 +1,14 @@
 // @ts-check
 
-const { recase } = require("@kristiandupont/recase");
 const path = require("path");
 
-const toPascalCase = recase(null, "pascal");
-const toCamelCase = recase(null, "camel");
+function toCamelCase(s) {
+  return s.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+}
+function toPascalCase(s) {
+  const c = toCamelCase(s);
+  return c.charAt(0).toUpperCase() + c.slice(1);
+}
 
 /**
  * @param {import("./WorkspaceConfig").WorkspaceConfig} config

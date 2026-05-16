@@ -1,17 +1,22 @@
 // @ts-check
 
 const path = require("node:path");
-const { recase } = require("@kristiandupont/recase");
 const { generateWorkspaceType } = require("./generateWorkspaceType");
 const {
   generateWorkspaceDefinition,
 } = require("./generateWorkspaceDefinition");
 const { useKanelContext } = require("kanel");
 
-const toPascalCase = recase(null, "pascal");
-exports.toPascalCase = toPascalCase;
-const toCamelCase = recase(null, "camel");
+function toCamelCase(s) {
+  return s.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+}
 exports.toCamelCase = toCamelCase;
+
+function toPascalCase(s) {
+  const c = toCamelCase(s);
+  return c.charAt(0).toUpperCase() + c.slice(1);
+}
+exports.toPascalCase = toPascalCase;
 
 /**
  * @param {import("./WorkspaceConfig").WorkspaceConfig[]} workspaces
