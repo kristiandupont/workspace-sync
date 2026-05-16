@@ -5,8 +5,6 @@ const { generateWorkspaceType } = require("./generateWorkspaceType");
 const {
   generateWorkspaceDefinition,
 } = require("./generateWorkspaceDefinition");
-const { useKanelContext } = require("kanel");
-
 function toCamelCase(s) {
   return s.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
 }
@@ -22,7 +20,7 @@ exports.toPascalCase = toPascalCase;
  * @param {import("./WorkspaceConfig").WorkspaceConfig[]} workspaces
  * @returns {import("kanel").PreRenderHookV4}
  */
-function makeGenerateWorkspace(workspaces) {
+function makeGenerateWorkspace(workspaces, useKanelContext) {
   return async (outputAcc) => {
     const output = { ...outputAcc };
     const context = useKanelContext();
