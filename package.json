@@ -1,0 +1,15 @@
+{
+  "name": "workspace-sync",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "peerDependencies": {
+    "@trpc/react-query": ">=10",
+    "react": ">=18"
+  },
+  "devDependencies": {
+    "@kristiandupont/recase": "^1.4.1",
+    "@trpc/react-query": "^10.45.4",
+    "kanel": "^4.0.0"
+  }
+}
