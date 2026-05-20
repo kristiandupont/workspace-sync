@@ -6,11 +6,14 @@ export function parseTimestamptz(v: string | null): Date | null {
   return v ? new Date(v) : null;
 }
 
-export function parseRow(row: any, timestampColumns: string[]): any {
+export function parseRow(
+  row: Record<string, unknown>,
+  timestampColumns: string[],
+): Record<string, unknown> {
   const parsed = { ...row };
   for (const col of timestampColumns) {
     if (parsed[col] !== undefined) {
-      parsed[col] = parseTimestamptz(parsed[col]);
+      parsed[col] = parseTimestamptz(parsed[col] as string | null);
     }
   }
   return parsed;

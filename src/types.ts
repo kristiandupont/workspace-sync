@@ -12,6 +12,7 @@ export interface WorkspaceDefinition {
 }
 
 export interface WorkspaceDelta {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   upserts: { [tableName: string]: any[] };
   deletes: { [tableName: string]: (number | string)[] };
   version: Date;

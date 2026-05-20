@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { WorkspaceDefinition, WorkspaceDelta } from "./types";
 
 // Structural alias — avoids importing knex directly and the dual-copy type

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createContext, useContext } from "react";
 import type { UseTRPCMutationResult } from "@trpc/react-query/shared";
 import type { WorkspaceDelta } from "./types";

@@ -3,12 +3,25 @@
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.ts",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
   "peerDependencies": {
     "@trpc/react-query": ">=10",
     "react": ">=18"
   },
   "devDependencies": {
-"@trpc/react-query": "^10.45.4",
-    "kanel": "^4.0.0"
+    "@trpc/react-query": "^10.45.4",
+    "@types/react": "^19.2.15",
+    "@typescript-eslint/eslint-plugin": "^8.59.4",
+    "@typescript-eslint/parser": "^8.59.4",
+    "eslint": "^10.4.0",
+    "kanel": "^4.0.0",
+    "react": "^19.2.6",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.6"
   }
 }
