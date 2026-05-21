@@ -11,9 +11,13 @@ export interface WorkspaceDefinition {
   tables: Record<string, WorkspaceTableConfig>;
 }
 
+export type Upsert = {
+  id: number | string;
+  [column: string]: unknown;
+};
+
 export interface WorkspaceDelta {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  upserts: { [tableName: string]: any[] };
+  upserts: { [tableName: string]: Upsert[] };
   deletes: { [tableName: string]: (number | string)[] };
   version: Date;
 }
