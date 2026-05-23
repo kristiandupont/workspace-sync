@@ -56,3 +56,5 @@ Refactor a file into a folder with well-named modules if it:
 ### Testing Philosophy
 
 Prioritize _semantic coverage_ (testing behavior) over line coverage. **Focus on critical paths and refactoring safety.** Tests should enable safe refactoring; skip trivial paths (e.g., simple getters/setters) that add no value. The pattern is to create a file with the same name + `.test.ts(x)` next to the file being tested.
+
+For integration tests covering the interaction between multiple files, use a `{concept}.test.ts` at the appropriate folder level. If that file exceeds ~500 lines, apply the same file→folder rule: refactor to a `{concept}.test/` folder with named sub-files inside.
