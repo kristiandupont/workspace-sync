@@ -2,6 +2,10 @@
 
 workspace-sync provides real-time workspace state synchronisation between backend and frontend. It is consumed by both Cedar and the apps.
 
+## Build
+
+workspace-sync compiles to `dist/` via tsdown before it is consumed. After a fresh checkout: `npm install && npm run build` in `workspace-sync/`. For development: `npm run build:watch`. The compiled `dist/` is committed so GitHub installs work in CI without a build step.
+
 ## General Architecture
 
 workspace-sync is a small, focused TypeScript library with three export paths:

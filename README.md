@@ -145,14 +145,26 @@ export const WorkspaceProvider: FC<{ children: ReactNode }> = ({ children }) => 
 - Every synchronized table needs `id`, `created_at`, `updated_at` columns.
 - Deletes must be recorded in a `deleted_record` table with columns: `id`, `table_name`, `record_id`, `deleted_at`, and `${anchor}_id` (e.g. `member_id`).
 
-## Vite note
+## Local development (workspace-sync-root checkout)
 
-Because this package ships as TypeScript source (`"main": "./src/index.ts"`) and is linked via `file:`, Vite must deduplicate React to avoid dual-instance issues:
+workspace-sync is published from GitHub (`github:kristiandupont/workspace-sync#main`). In the monorepo workspace the consuming apps replace the GitHub install with a proxy directory (via their `postinstall` script) that symlinks directly to this package's `dist/` folder.
 
-```ts
-// vite.config.ts
-resolve: {
-  dedupe: ["react", "react-dom"],
-}
+**Before first use after a fresh checkout, build the package:**
+
+```sh
+cd workspace-sync
+npm install
+npm run build       # runs tsdown → populates dist/
+npm run build:watch # for incremental rebuilds during development
 ```
-# workspace-sync
+
+The compiled output (`dist/*.cjs`, `dist/*.d.cts`) is committed to the repo so that `npm install` from GitHub works without a build step in CI.
+
+## Scripts
+
+| Script | What it does |
+|--------|-------------|
+| `npm run build` | Compile all entries to `dist/` via tsdown |
+| `npm run build:watch` | Incremental rebuild on file change |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run test` | `vitest run` |

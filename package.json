@@ -2,13 +2,21 @@
   "name": "workspace-sync",
   "version": "0.1.0",
   "private": true,
-  "main": "./src/index.ts",
+  "main": "./dist/index.cjs",
   "exports": {
-    ".": "./src/index.ts",
-    "./backend": "./src/backend/index.ts",
-    "./frontend": "./src/frontend/index.tsx"
+    ".":          { "require": "./dist/index.cjs",    "default": "./dist/index.cjs",    "types": "./dist/index.d.cts" },
+    "./backend":  { "require": "./dist/backend.cjs",  "default": "./dist/backend.cjs",  "types": "./dist/backend.d.cts" },
+    "./frontend": { "require": "./dist/frontend.cjs", "default": "./dist/frontend.cjs", "types": "./dist/frontend.d.cts" }
+  },
+  "typesVersions": {
+    "*": {
+      "backend":  ["dist/backend.d.cts"],
+      "frontend": ["dist/frontend.d.cts"]
+    }
   },
   "scripts": {
+    "build": "tsdown",
+    "build:watch": "tsdown --watch",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/",
     "test": "vitest run",
@@ -25,6 +33,7 @@
     "eslint": "^10.4.0",
     "kanel": "^4.0.0",
     "react": "^19.2.6",
+    "tsdown": "^0.22.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.6",
     "zod": "^3.21.4"
