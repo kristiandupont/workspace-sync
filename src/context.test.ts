@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { applyWorkspaceDelta, workspaceVersionRef } from "../context";
-import type { WorkspaceDelta } from "../types";
+import { applyWorkspaceDelta, workspaceVersionRef } from "./context";
+import type { WorkspaceDelta } from "./types";
 
 type Member = { id: number; name: string; updated_at: Date };
 type Workspace = {

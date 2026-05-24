@@ -4,8 +4,8 @@ import {
   buildDeleteQuery,
   buildInitialQuery,
   buildUpsertQuery,
-} from "../queries";
-import type { WorkspaceDefinition } from "../types";
+} from "./queries";
+import type { WorkspaceDefinition } from "./types";
 
 const definition: WorkspaceDefinition = {
   name: "foundation",

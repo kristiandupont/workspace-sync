@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseRow, parseTimestamptz, snakeToCamelPlural } from "../utils";
+import { parseRow, parseTimestamptz, snakeToCamelPlural } from "./utils";
 
 describe("snakeToCamelPlural", () => {
   it("converts snake_case to camelCase and pluralizes", () => {
