@@ -41,6 +41,8 @@ Refactor a file into a folder with well-named modules if it:
 
 ### AGENTS.md Files
 
+**Goal:** The fractal structure aims for cognitive encapsulation — any sub-tree should be understandable in isolation. AGENTS.md files serve this goal the way code comments do: they surface what naming and structure alone don't convey. The `backend/` and `frontend/` subfolders are intentional exceptions — they exist for consumer separation and are inherently cross-cutting.
+
 **Location:** Every `src/` folder and subfolder should include an `AGENTS.md`.
 
 **Content:**
@@ -54,7 +56,6 @@ Refactor a file into a folder with well-named modules if it:
 
 - **Brevity**: Prioritize succinctness for LLM token efficiency. **Omit details derivable from conventions, naming, or folder structure.**
 - **Prioritize the Notes section** for non-obvious context.
-- **Usage**: Agents/developers **must** read this file before modifying the folder's contents.
 - **Updates**: Required when adding/removing files, changing responsibilities, or creating subfolders (also update parent's `AGENTS.md`).
 
 ### Testing Philosophy
