@@ -6,7 +6,8 @@
   "exports": {
     ".":          { "require": "./dist/index.cjs",    "default": "./dist/index.cjs",    "types": "./dist/index.d.cts" },
     "./backend":  { "require": "./dist/backend.cjs",  "default": "./dist/backend.cjs",  "types": "./dist/backend.d.cts" },
-    "./frontend": { "require": "./dist/frontend.cjs", "default": "./dist/frontend.cjs", "types": "./dist/frontend.d.cts" }
+    "./frontend": { "require": "./dist/frontend.cjs", "default": "./dist/frontend.cjs", "types": "./dist/frontend.d.cts" },
+    "./kanel":    { "require": "./kanel/index.js",    "default": "./kanel/index.js",    "types": "./kanel/WorkspaceConfig.d.ts" }
   },
   "typesVersions": {
     "*": {
