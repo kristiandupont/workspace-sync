@@ -8,6 +8,8 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       - run: npm ci
+      - run: npm run build
+      - run: git diff --quiet dist/ || (echo "dist/ is stale — run 'npm run build' and commit the result" && exit 1)
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
