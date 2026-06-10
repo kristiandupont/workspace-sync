@@ -9,18 +9,14 @@ interface KnexLike {
 import { buildUpsertQuery, buildDeleteQuery } from "./queries";
 import { parseTimestamptz, parseRow, snakeToCamelPlural } from "./utils";
 
+// The anchor table is included in `tables` (with link "id"), so it gets the
+// same parsing and column omission as every other table.
 function parseUpserts(
   definition: WorkspaceDefinition,
   upserts: any,
 ): { [tableName: string]: any[] } {
   const result: { [tableName: string]: any[] } = {};
-  const { anchor, tables } = definition;
-
-  if (upserts[anchor]) {
-    result[anchor] = upserts[anchor].map((r: any) =>
-      parseRow(r, ["created_at", "updated_at"]),
-    );
-  }
+  const { tables } = definition;
 
   for (const [tableName, config] of Object.entries(tables)) {
     if (!upserts[tableName]) continue;
@@ -71,14 +67,8 @@ export function parseInitialWorkspace<T>(
   definition: WorkspaceDefinition,
   raw: any,
 ): T {
-  const { anchor, tables } = definition;
+  const { tables } = definition;
   const result: any = {};
-
-  result[snakeToCamelPlural(anchor)] = (raw[anchor] ?? []).map((r: any) => ({
-    ...r,
-    created_at: parseTimestamptz(r.created_at),
-    updated_at: parseTimestamptz(r.updated_at),
-  }));
 
   for (const [tableName, config] of Object.entries(tables)) {
     result[snakeToCamelPlural(tableName)] = (raw[tableName] ?? []).map(

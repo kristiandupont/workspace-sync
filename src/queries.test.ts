@@ -12,16 +12,44 @@ const definition: WorkspaceDefinition = {
   schema: "public",
   anchor: "member",
   tables: {
+    member: { link: "id", omittedColumns: ["token_version"], timestampColumns: ["created_at", "updated_at"] },
     beat_point: { link: "member_id", omittedColumns: [], timestampColumns: ["created_at", "updated_at"] },
     tag: { link: "member_id", omittedColumns: ["internal_notes"], timestampColumns: ["updated_at"] },
   },
 };
+
+describe("anchor validation", () => {
+  it("throws if the anchor table is not included in tables", () => {
+    const tablesWithoutAnchor = Object.fromEntries(
+      Object.entries(definition.tables).filter(([name]) => name !== "member"),
+    );
+    expect(() =>
+      buildInitialQuery({ ...definition, tables: tablesWithoutAnchor }, 42),
+    ).toThrow(/anchor table "member" must be included in tables/);
+  });
+
+  it("throws if the anchor table's link is not 'id'", () => {
+    const tables = {
+      ...definition.tables,
+      member: { ...definition.tables.member, link: "owner_id" },
+    };
+    expect(() => buildInitialQuery({ ...definition, tables }, 42)).toThrow(
+      /link "id"/,
+    );
+  });
+});
 
 describe("buildInitialQuery", () => {
   it("returns a SQL string and single binding for the anchor ID", () => {
     const { sql, bindings } = buildInitialQuery(definition, 42);
     expect(typeof sql).toBe("string");
     expect(bindings).toEqual([42]);
+  });
+
+  it("selects the anchor row by id and generates its CTE exactly once", () => {
+    const { sql } = buildInitialQuery(definition, 42);
+    expect(sql).toContain("WHERE id = params.anchor_id");
+    expect(sql.match(/member_cte AS \(/g)).toHaveLength(1);
   });
 
   it("uses integer cast for numeric anchor IDs", () => {

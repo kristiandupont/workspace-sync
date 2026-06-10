@@ -1,4 +1,4 @@
-import { t as WorkspaceDefinition } from "./types-D6ODtdDM.cjs";
+import { t as WorkspaceDefinition } from "./types-LCCUSy-n.cjs";
 
 //#region src/backend/index.d.ts
 interface KnexLike {

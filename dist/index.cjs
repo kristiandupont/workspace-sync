@@ -1,5 +1,5 @@
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-const require_delta = require("./delta-BEC7s1R_.cjs");
+const require_delta = require("./delta-Cju7rIza.cjs");
 const require_context = require("./context-CSF-QrpS.cjs");
 exports.applyWorkspaceDelta = require_context.applyWorkspaceDelta;
 exports.buildDeleteQuery = require_delta.buildDeleteQuery;

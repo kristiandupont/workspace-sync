@@ -18,7 +18,11 @@ function toPascalCase(s) {
  */
 const generateWorkspaceType = (config, schema, outputPath) => {
   const { name, anchor, tables } = config;
-  const tableNames = [anchor, ...Object.keys(tables)];
+  // The anchor is itself an entry in `tables` (with link "id"); keep it first.
+  const tableNames = [
+    anchor,
+    ...Object.keys(tables).filter((t) => t !== anchor),
+  ];
 
   const typeName = toPascalCase(name);
   return {
@@ -29,7 +33,7 @@ const generateWorkspaceType = (config, schema, outputPath) => {
       ...tableNames.map((tableName) => {
         let propertyTypeName = toPascalCase(tableName);
         const omittedTypes = tables[tableName]?.omittedColumns;
-        if (omittedTypes) {
+        if (omittedTypes && omittedTypes.length > 0) {
           propertyTypeName = `Omit<${propertyTypeName}, ${omittedTypes
             .map((t) => `'${t}'`)
             .join(" | ")}>`;

@@ -32,6 +32,12 @@ function makeGenerateWorkspace(workspaces, useKanelContext) {
           `Schema "${workspace.schema}" not found for workspace "${workspace.name}"`,
         );
       }
+      const anchorConfig = workspace.tables[workspace.anchor];
+      if (!anchorConfig || anchorConfig.link !== "id") {
+        throw new Error(
+          `Workspace "${workspace.name}": the anchor table "${workspace.anchor}" must be included in tables with link "id"`,
+        );
+      }
       console.info("Generating workspace for", schema.name);
 
       const workspaceDefinition = generateWorkspaceDefinition(

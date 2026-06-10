@@ -7,6 +7,10 @@ export interface WorkspaceTableConfig {
 export interface WorkspaceDefinition {
   name: string;
   schema: string;
+  /**
+   * The table the workspace hangs off. It must also appear in `tables` with
+   * `link: "id"` — it is synchronized and parsed like any other table.
+   */
   anchor: string;
   tables: Record<string, WorkspaceTableConfig>;
 }

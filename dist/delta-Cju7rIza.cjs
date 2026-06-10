@@ -6,17 +6,19 @@ function anchorCast(anchorId) {
 function paramsCte(anchorId, extraColumns) {
 	return extraColumns ? `params AS (SELECT ${anchorCast(anchorId)} AS anchor_id, ${extraColumns})` : `params AS (SELECT ${anchorCast(anchorId)} AS anchor_id)`;
 }
-function buildInitialQuery(definition, anchorId) {
+function orderedTableEntries(definition) {
 	const { anchor, tables, name } = definition;
-	const tableNames = [anchor, ...Object.keys(tables)];
+	const anchorConfig = tables[anchor];
+	if (!anchorConfig || anchorConfig.link !== "id") throw new Error(`Workspace "${name}": the anchor table "${anchor}" must be included in tables with link "id"`);
+	return [[anchor, anchorConfig], ...Object.entries(tables).filter(([tableName]) => tableName !== anchor)];
+}
+function buildInitialQuery(definition, anchorId) {
+	const { anchor, name } = definition;
+	const tableEntries = orderedTableEntries(definition);
+	const tableNames = tableEntries.map(([tableName]) => tableName);
 	const ctes = [
 		paramsCte(anchorId),
-		`${anchor}_cte AS (
-    SELECT ${anchor}.*
-    FROM ${anchor}, params
-    WHERE id = params.anchor_id
-  )`,
-		...Object.entries(tables).map(([tableName, config]) => `${tableName}_cte AS (
+		...tableEntries.map(([tableName, config]) => `${tableName}_cte AS (
     SELECT ${tableName}.*
     FROM ${tableName}, params
     WHERE ${config.link} = params.anchor_id
@@ -45,23 +47,14 @@ SELECT json_build_object(
 	};
 }
 function buildUpsertQuery(definition, anchorId, since) {
-	const { anchor, tables } = definition;
-	const tableNames = [anchor, ...Object.keys(tables)];
-	const ctes = [
-		paramsCte(anchorId, "?::timestamptz AS since_ts"),
-		`${anchor}_cte AS (
-    SELECT ${anchor}.*
-    FROM ${anchor}, params
-    WHERE id = params.anchor_id
-    AND updated_at > params.since_ts
-  )`,
-		...Object.entries(tables).map(([tableName, config]) => `${tableName}_cte AS (
+	const tableEntries = orderedTableEntries(definition);
+	const tableNames = tableEntries.map(([tableName]) => tableName);
+	const ctes = [paramsCte(anchorId, "?::timestamptz AS since_ts"), ...tableEntries.map(([tableName, config]) => `${tableName}_cte AS (
     SELECT ${tableName}.*
     FROM ${tableName}, params
     WHERE ${config.link} = params.anchor_id
     AND updated_at > params.since_ts
-  )`)
-	];
+  )`)];
 	const tableSelects = tableNames.map((t) => `'${t}', COALESCE((SELECT json_agg(row_to_json(t)) FROM ${t}_cte t), '[]'::json)`).join(",\n    ");
 	return {
 		sql: `
@@ -75,8 +68,8 @@ SELECT json_build_object(
 	};
 }
 function buildDeleteQuery(definition, anchorId, since) {
-	const { anchor, tables } = definition;
-	const tableList = [anchor, ...Object.keys(tables)].map((t) => `'${t}'`).join(", ");
+	const { anchor } = definition;
+	const tableList = orderedTableEntries(definition).map(([tableName]) => tableName).map((t) => `'${t}'`).join(", ");
 	const anchorIdColumn = `${anchor}_id`;
 	return {
 		sql: `
@@ -115,8 +108,7 @@ FROM (
 //#region src/delta.ts
 function parseUpserts(definition, upserts) {
 	const result = {};
-	const { anchor, tables } = definition;
-	if (upserts[anchor]) result[anchor] = upserts[anchor].map((r) => require_utils.parseRow(r, ["created_at", "updated_at"]));
+	const { tables } = definition;
 	for (const [tableName, config] of Object.entries(tables)) {
 		if (!upserts[tableName]) continue;
 		result[tableName] = upserts[tableName].map((r) => {
@@ -142,13 +134,8 @@ function calculateVersion(upserts, maxDeletedAt, since) {
 	return maxTimestamp;
 }
 function parseInitialWorkspace(definition, raw) {
-	const { anchor, tables } = definition;
+	const { tables } = definition;
 	const result = {};
-	result[require_utils.snakeToCamelPlural(anchor)] = (raw[anchor] ?? []).map((r) => ({
-		...r,
-		created_at: require_utils.parseTimestamptz(r.created_at),
-		updated_at: require_utils.parseTimestamptz(r.updated_at)
-	}));
 	for (const [tableName, config] of Object.entries(tables)) result[require_utils.snakeToCamelPlural(tableName)] = (raw[tableName] ?? []).map((r) => {
 		const parsed = { ...r };
 		for (const col of config.timestampColumns) parsed[col] = require_utils.parseTimestamptz(r[col]);
@@ -204,4 +191,4 @@ Object.defineProperty(exports, "parseInitialWorkspace", {
 	}
 });
 
-//# sourceMappingURL=delta-BEC7s1R_.cjs.map
+//# sourceMappingURL=delta-Cju7rIza.cjs.map

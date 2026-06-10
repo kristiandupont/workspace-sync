@@ -1,4 +1,4 @@
-import { n as WorkspaceDelta } from "./types-D6ODtdDM.cjs";
+import { n as WorkspaceDelta } from "./types-LCCUSy-n.cjs";
 import { ComponentType, FC, ReactNode } from "react";
 
 //#region src/frontend/index.d.ts

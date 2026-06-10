@@ -1,4 +1,4 @@
-import { n as WorkspaceDelta, r as WorkspaceTableConfig, t as WorkspaceDefinition } from "./types-D6ODtdDM.cjs";
+import { n as WorkspaceDelta, r as WorkspaceTableConfig, t as WorkspaceDefinition } from "./types-LCCUSy-n.cjs";
 
 //#region src/queries.d.ts
 interface RawQuery {

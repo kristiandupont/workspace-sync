@@ -20,21 +20,39 @@ function paramsCte(anchorId: number | string, extraColumns?: string): string {
     : `params AS (SELECT ${anchorCast(anchorId)} AS anchor_id)`;
 }
 
+// The anchor is an ordinary synchronized table whose link is the `id` column
+// itself. Requiring it in `tables` gives it the same per-table config
+// (omittedColumns, timestampColumns) as every other table; `anchor` only
+// designates which table the workspace hangs off. The anchor is kept first in
+// table orderings because the initial query joins from it (it is the one CTE
+// guaranteed to hold exactly one row).
+function orderedTableEntries(
+  definition: WorkspaceDefinition,
+): [string, WorkspaceDefinition["tables"][string]][] {
+  const { anchor, tables, name } = definition;
+  const anchorConfig = tables[anchor];
+  if (!anchorConfig || anchorConfig.link !== "id") {
+    throw new Error(
+      `Workspace "${name}": the anchor table "${anchor}" must be included in tables with link "id"`,
+    );
+  }
+  return [
+    [anchor, anchorConfig],
+    ...Object.entries(tables).filter(([tableName]) => tableName !== anchor),
+  ];
+}
+
 export function buildInitialQuery(
   definition: WorkspaceDefinition,
   anchorId: number | string,
 ): RawQuery {
-  const { anchor, tables, name } = definition;
-  const tableNames = [anchor, ...Object.keys(tables)];
+  const { anchor, name } = definition;
+  const tableEntries = orderedTableEntries(definition);
+  const tableNames = tableEntries.map(([tableName]) => tableName);
 
   const ctes = [
     paramsCte(anchorId),
-    `${anchor}_cte AS (
-    SELECT ${anchor}.*
-    FROM ${anchor}, params
-    WHERE id = params.anchor_id
-  )`,
-    ...Object.entries(tables).map(
+    ...tableEntries.map(
       ([tableName, config]) => `${tableName}_cte AS (
     SELECT ${tableName}.*
     FROM ${tableName}, params
@@ -87,18 +105,12 @@ export function buildUpsertQuery(
   anchorId: number | string,
   since: Date,
 ): RawQuery {
-  const { anchor, tables } = definition;
-  const tableNames = [anchor, ...Object.keys(tables)];
+  const tableEntries = orderedTableEntries(definition);
+  const tableNames = tableEntries.map(([tableName]) => tableName);
 
   const ctes = [
     paramsCte(anchorId, "?::timestamptz AS since_ts"),
-    `${anchor}_cte AS (
-    SELECT ${anchor}.*
-    FROM ${anchor}, params
-    WHERE id = params.anchor_id
-    AND updated_at > params.since_ts
-  )`,
-    ...Object.entries(tables).map(
+    ...tableEntries.map(
       ([tableName, config]) => `${tableName}_cte AS (
     SELECT ${tableName}.*
     FROM ${tableName}, params
@@ -131,8 +143,10 @@ export function buildDeleteQuery(
   anchorId: number | string,
   since: Date,
 ): RawQuery {
-  const { anchor, tables } = definition;
-  const tableNames = [anchor, ...Object.keys(tables)];
+  const { anchor } = definition;
+  const tableNames = orderedTableEntries(definition).map(
+    ([tableName]) => tableName,
+  );
   const tableList = tableNames.map((t) => `'${t}'`).join(", ");
   // Convention: the deleted_record table has a column named `${anchor}_id`
   const anchorIdColumn = `${anchor}_id`;

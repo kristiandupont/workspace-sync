@@ -7,6 +7,10 @@ interface WorkspaceTableConfig {
 interface WorkspaceDefinition {
   name: string;
   schema: string;
+  /**
+   * The table the workspace hangs off. It must also appear in `tables` with
+   * `link: "id"` — it is synchronized and parsed like any other table.
+   */
   anchor: string;
   tables: Record<string, WorkspaceTableConfig>;
 }
@@ -25,4 +29,4 @@ interface WorkspaceDelta {
 }
 //#endregion
 export { WorkspaceDelta as n, WorkspaceTableConfig as r, WorkspaceDefinition as t };
-//# sourceMappingURL=types-D6ODtdDM.d.cts.map
+//# sourceMappingURL=types-LCCUSy-n.d.cts.map

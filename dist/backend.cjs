@@ -1,5 +1,5 @@
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-const require_delta = require("./delta-BEC7s1R_.cjs");
+const require_delta = require("./delta-Cju7rIza.cjs");
 let zod = require("zod");
 //#region src/backend/index.ts
 function createWorkspaceRouter(foundationDefinition, options) {
