@@ -25,8 +25,8 @@ import {
   buildInitialQuery, buildUpsertQuery, buildDeleteQuery,
   // Parsing / server helpers
   parseInitialWorkspace, getWorkspaceDelta,
-  // React context factory
-  createWorkspaceContext, applyWorkspaceDelta, workspaceVersionRef,
+  // Store (framework-agnostic)
+  createWorkspaceStore, WorkspaceStore, applyWorkspaceDelta, workspaceVersionRef,
 } from "workspace-sync";
 ```
 
@@ -55,21 +55,22 @@ const myDefinition: WorkspaceDefinition = {
 
 **`getWorkspaceDelta(trx, definition, anchorId, since)`** — runs both delta queries in parallel and returns a `WorkspaceDelta` with `upserts`, `deletes`, and the new `version`.
 
-**`createWorkspaceContext<T>()`** — React context factory. Returns:
+**`createWorkspaceStore<T>()`** — framework-agnostic holder of one workspace, with no React import. The React adapter binds to it via `useSyncExternalStore`; a future adapter for another framework only needs `subscribe`.
 
 ```ts
-const {
-  workspaceContext,       // React context object (pass as Provider)
-  applyDeltaContext,      // React context for the delta applier
-  useWorkspace,           // hook — returns the current workspace T
-  useApplyDelta,          // hook — returns the delta applier function
-  useMutationWithDelta,   // hook — wraps a tRPC mutation to auto-apply the returned delta
-} = createWorkspaceContext<Foundation>();
+const store = createWorkspaceStore<Foundation>();
+store.getSnapshot();          // Foundation | undefined
+store.getVersion();           // Date | undefined
+store.setInitial(workspace);
+store.applyDelta(delta);      // no-op unless the delta's version advances
+store.subscribe(() => {});    // returns an unsubscribe function
 ```
 
-**`applyWorkspaceDelta<T>(workspace, delta)`** — pure function that merges a `WorkspaceDelta` into a workspace value (immutably).
+`applyDelta` discarding a delta that does not advance the version is what makes duplicate deliveries harmless — the same change can arrive from a poll, from another tab, and from a server poke.
 
-**`workspaceVersionRef`** — mutable ref that tracks the current version, useful for attaching to tRPC requests as a header.
+**`applyWorkspaceDelta<T>(workspace, delta)`** — pure function that merges a `WorkspaceDelta` into a workspace value (immutably), preserving the identity of rows and tables the delta did not touch, and returning the original workspace when the delta changes nothing. Selectors depend on this.
+
+**`workspaceVersionRef`** — mutable ref tracking the current version, for attaching to tRPC requests as a header. Kept in sync by every store; assumes one workspace per client.
 
 ### Kanel plugin (`workspace-sync/kanel`)
 
@@ -120,25 +121,36 @@ getFoundationDelta: protectedProcedure
 
 ## Usage pattern (client)
 
+`createWorkspaceProvider` (from `workspace-sync/frontend`) owns the store, the initial fetch and the delta polling. Inject the query hooks so the package stays independent of your tRPC setup.
+
 ```tsx
 // WorkspaceProvider.tsx
-const { workspaceContext, applyDeltaContext, useWorkspace, useMutationWithDelta } =
-  createWorkspaceContext<Foundation>();
-
-export { useWorkspace, useMutationWithDelta };
-
-export const WorkspaceProvider: FC<{ children: ReactNode }> = ({ children }) => {
-  const [foundation, setFoundation] = useState<Foundation | undefined>();
-  // ... fetch initial data, poll for deltas, call applyWorkspaceDelta ...
-  return (
-    <workspaceContext.Provider value={foundation}>
-      <applyDeltaContext.Provider value={handleApplyDelta}>
-        {children}
-      </applyDeltaContext.Provider>
-    </workspaceContext.Provider>
-  );
-};
+export const {
+  useWorkspace,           // hook — the whole workspace; re-renders on any change
+  useWorkspaceSelector,   // hook — a slice; re-renders only when that slice changes
+  useApplyDelta,          // hook — applies a delta (used by useMutationWithDelta)
+  WorkspaceProvider,      // renders Spinner until the initial fetch resolves
+  TestWorkspaceProvider,  // serves a static workspace in tests
+} = createWorkspaceProvider<Foundation>({
+  useFoundationQuery: () => trpc.workspace.getFoundation.useQuery(),
+  useFoundationDeltaQuery: (input, options) =>
+    trpc.workspace.getFoundationDelta.useQuery(input, options),
+  Spinner: CenteredSpinner,
+});
 ```
+
+Prefer selectors in components that render often. `isEqual` defaults to `Object.is`, which is enough for most selectors because `applyWorkspaceDelta` preserves references; use `shallowEqual` when the selector builds a fresh object, and `byId` for per-row selectors so they cost a map lookup rather than a scan.
+
+```tsx
+const trackers = useWorkspaceSelector((w) => w.trackers);
+const tracker = useWorkspaceSelector((w) => byId(w.trackers).get(id));
+const counts = useWorkspaceSelector(
+  (w) => ({ trackers: w.trackers.length, entries: w.timeEntries.length }),
+  shallowEqual,
+);
+```
+
+For a workspace a given user may not have (an admin or org workspace), `useOptionalWorkspace` and `useOptionalWorkspaceSelector` return `undefined` instead of throwing when that provider is absent.
 
 ## Database requirements
 
@@ -147,7 +159,7 @@ export const WorkspaceProvider: FC<{ children: ReactNode }> = ({ children }) => 
 
 ## Local development (workspace-sync-root checkout)
 
-workspace-sync is published from GitHub (`github:kristiandupont/workspace-sync#main`). In the monorepo workspace the consuming apps replace the GitHub install with a proxy directory (via their `postinstall` script) that symlinks directly to this package's `dist/` folder.
+workspace-sync is published from GitHub (`github:kristiandupont/workspace-sync#main`) and pinned by commit in each consuming app's `package-lock.json`. The apps do **not** symlink this folder — local changes only reach them once the library is built, committed, pushed to `main`, and the lock files are updated via `./sync-libs.sh` from the root folder. This is deliberate: local behaviour then matches CI and production exactly.
 
 **Before first use after a fresh checkout, build the package:**
 

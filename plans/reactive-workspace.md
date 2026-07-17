@@ -7,13 +7,13 @@ Moneybutler:
 
 1. **Selectors** — components subscribe to a slice of the workspace and only
    re-render when that slice changes.
-2. **Multi-tab** — one tab per user becomes the *driver* (owns polling/push
+2. **Multi-tab** — one tab per user becomes the _driver_ (owns polling/push
    connection); other tabs receive changes without their own server traffic.
    IndexedDB persists a snapshot so reloads and new tabs start instantly.
 3. **Server push** — changes not caused by a client request (e.g. a Graphile
    job) reach connected clients within moments instead of at the next poll.
 4. **Offline mutations** — the PWA stays usable offline: reads from the
-   persisted snapshot, writes through a replayed outbox. Explicitly *not*
+   persisted snapshot, writes through a replayed outbox. Explicitly _not_
    two-way state sync or CRDTs — mutations remain server-authoritative RPCs.
 
 The unifying move: pull workspace state out of React into a **framework-agnostic
@@ -23,15 +23,15 @@ React. A future CrankJS adapter is then a thin `subscribe → ctx.refresh()`
 binding — nothing in the core may import React.
 
 **Anchors are not always members.** A workspace is usually anchored on a
-`member`, but the anchor *could* be another entity — most likely an
+`member`, but the anchor _could_ be another entity — most likely an
 `organization`. Neither app does this today, but these changes are
 framework-level, so nothing here may assume `anchorId === memberId`. Two
 consequences run through the whole plan: (a) an anchor id is only unique
-*within its type* — member `#5` and org `#5` are different things — so every
+_within its type_ — member `#5` and org `#5` are different things — so every
 key derived from an anchor (poke topics, driver lock, BroadcastChannel, IDB)
 must be **typed**: `${anchorType}:${anchorId}`, where the type is the
 `WorkspaceDefinition.anchor` table name; (b) a single client can hold **several
-workspaces at once** (e.g. an admin sees the normal user workspace *and* an
+workspaces at once** (e.g. an admin sees the normal user workspace _and_ an
 admin-only workspace with extra entities), so stores, coordinators, and socket
 subscriptions are all per-workspace, and workspace data is globally available
 via its store rather than scoped to a React subtree.
@@ -50,7 +50,7 @@ levels that can be adopted incrementally — or stopped at any point.
   delta sets — it only tells connected clients "workspace `${type}:${id}`
   changed", and each client pulls via the existing delta endpoint with its own
   `since`. The server stays stateless per connection. Duplicate/spurious pokes
-  are harmless *provided* the store's `applyDelta` no-ops when the delta's
+  are harmless _provided_ the store's `applyDelta` no-ops when the delta's
   version does not advance — that guard is new behaviour to build (§1a), not an
   existing property: today `applyWorkspaceDelta` applies unconditionally and
   only the polled-query effect discards on an exact-version match.
@@ -65,7 +65,7 @@ levels that can be adopted incrementally — or stopped at any point.
   through neither. This drops the per-app trigger migration, avoids a
   `pg_notify` firehose on bulk jobs (one poke per job, not per row), and keeps
   the coupling in application code. The one thing triggers gave for free and
-  this gives up: a write whose *affected* anchor differs from the anchor the
+  this gives up: a write whose _affected_ anchor differs from the anchor the
   poking code knows about (e.g. a cross-anchor FK cascade). Per-member/-org
   anchoring makes those rare-to-nonexistent — treat their absence as a
   deliberate invariant, not an accident.
@@ -76,7 +76,7 @@ levels that can be adopted incrementally — or stopped at any point.
   `pg_notify('workspace_changed', { type, id })`; every instance `LISTEN`s and
   pokes its own subscribed sockets. Single-instance today collapses to the same
   code path (it just also hears its own notify). No triggers involved — the
-  *decision* to notify lives in app code where it can be coalesced.
+  _decision_ to notify lives in app code where it can be coalesced.
 - **Backend-derived socket subscriptions, keyed by anchor.** The socket registry
   is keyed by anchor topic, not by member. On connect, after the existing token
   auth, an app-supplied `resolveSubscriptions(member) → topics[]` enumerates the
@@ -86,7 +86,7 @@ levels that can be adopted incrementally — or stopped at any point.
   anchor→members query at poke time. Because subscriptions are derived server-side from the
   authenticated identity, there is no client-asserted-anchor attack surface; and
   the follow-up delta pull re-authorizes regardless, so a stale subscription can
-  leak change-*timing* at worst, never data.
+  leak change-_timing_ at worst, never data.
 - **Memory is the source of truth; IndexedDB is a write-behind cache.** IDB has
   no change-notification API and every read is async — making it the live store
   would kill the synchronous no-spinner reads that are the point of
@@ -100,7 +100,7 @@ levels that can be adopted incrementally — or stopped at any point.
   as its own driver — exactly today's behaviour, so degradation is graceful.
 - **Race handling leans on delta idempotence.** Upserts carry full rows keyed
   by id, deletes are id sets, every delta carries `version` — replays are
-  no-ops. The one real hazard is a *gap* (a tab that slept receives a delta
+  no-ops. The one real hazard is a _gap_ (a tab that slept receives a delta
   computed `since` a version newer than its own); the fix is a resync rule,
   see Phase 2.
 
@@ -143,7 +143,7 @@ membership so the same class of bug does not recur.
 
 ---
 
-## Phase 1 — External store + selectors (workspace-sync, then both apps)
+## Phase 1 [DONE] — External store + selectors (workspace-sync, then both apps)
 
 ### 1a. `src/store.ts` (new, framework-free)
 
@@ -152,7 +152,7 @@ export interface WorkspaceStore<T> {
   getSnapshot(): T | undefined;
   getVersion(): Date | undefined;
   setInitial(workspace: T): void;
-  applyDelta(delta: WorkspaceDelta): void;   // no-op if version hasn't advanced
+  applyDelta(delta: WorkspaceDelta): void; // no-op if version hasn't advanced
   subscribe(listener: () => void): () => void;
 }
 export function createWorkspaceStore<T>(): WorkspaceStore<T>;
@@ -168,7 +168,7 @@ This is not a nice-to-have; it is the mechanism the whole selector feature rests
 on. `context.ts` currently `cloneRecord`s **every existing row** of any table
 that receives an upsert, so one changed tracker gives all trackers new
 identities and reference-equality selectors fire spuriously — with this in
-place, *every* selector re-runs and re-renders on *any* change, and the selector
+place, _every_ selector re-runs and re-renders on _any_ change, and the selector
 story is a lie. Change to: keep existing row references untouched, insert/replace
 only the rows present in the delta, and replace a table array only when that
 table actually changed. Add tests asserting referential stability (untouched
@@ -190,7 +190,7 @@ rows).
 
 - **Memoized id-indexes for list-item selectors.** A plain blob makes per-row
   selectors quadratic: 500 rows each doing `w => w.transactions.find(t => t.id
-  === id)` re-runs 500 O(n) scans per delta. Because 1b keeps a table's array
+=== id)` re-runs 500 O(n) scans per delta. Because 1b keeps a table's array
   referentially stable until it actually changes, expose a `byId` derived from a
   `WeakMap<array, Map<id, row>>` — same array in, same index out, rebuilt only
   when the array changes. Row selectors become `w => byId(w.transactions).get(id)`
@@ -242,7 +242,7 @@ member #5 vs org #5 id collision) from sharing a driver, a channel, or a
 snapshot — a real cross-account leak if the key omits the anchor.
 
 - **Driver election**: `navigator.locks.request("workspace-driver:{key}",
-  () => <promise held until tab dies>)`. Callback `onBecomeDriver` /
+() => <promise held until tab dies>)`. Callback `onBecomeDriver` /
   `onResignDriver` lets the provider start/stop polling and (Phase 3) poke
   handling. No `navigator.locks` → behave as permanent driver. (With Web Locks
   you hold the lock until the tab dies; `onResignDriver` fires on teardown/abort,
@@ -253,14 +253,14 @@ snapshot — a real cross-account leak if the key omits the anchor.
     response). Receivers apply via `store.applyDelta`.
   - `{ type: "state-request" }` / `{ type: "state", workspace, version }` —
     full-snapshot resync, served by the driver.
-  - **Gap rule**: a receiver whose version is *older* than `since` must not
+  - **Gap rule**: a receiver whose version is _older_ than `since` must not
     apply the delta; it posts `state-request` instead (rare: bfcache/mobile
     background wake-ups).
   - `structuredClone` semantics of `postMessage` handle `Date` fields natively.
 - **IndexedDB persistence** (driver only, debounced ~1 s):
   `{ key, anchorType, anchorId, version, workspace }`, record keyed by `key`.
   Storing the typed anchor means a snapshot is never hydrated for a different
-  login *or* a different anchor type. Export `clearWorkspaceCache()` for apps to
+  login _or_ a different anchor type. Export `clearWorkspaceCache()` for apps to
   call on logout — and logout must also tear the coordinator down (release the
   lock, close the channel, stop polling), not merely wipe IDB, or a same-tab
   re-login races the old driver.
@@ -280,7 +280,7 @@ unchanged until apps opt in):
 Boot sequence becomes: try IDB hydration → if hit, `setInitial(snapshot)` and
 immediately `fetchDelta(persistedVersion)`; if miss, run the initial query as
 today. Polling runs **only in the driver tab**. Mutation deltas
-(`useMutationWithDelta` path) apply locally *and* broadcast, so sibling tabs
+(`useMutationWithDelta` path) apply locally _and_ broadcast, so sibling tabs
 update without waiting for a poll/poke.
 
 ### 2c. App integration
@@ -317,10 +317,10 @@ several workspaces only pulls the one that changed. No database triggers.
   typed anchor only — never row data (8 kB NOTIFY limit; the client pulls the
   delta anyway). Call it from exactly two places so the surface stays small:
   - **`protectedMutationWithDelta`** (`app/src/backend/trpc.ts` in both apps)
-    already computes the delta and knows the anchor id — poke there and *every*
+    already computes the delta and knows the anchor id — poke there and _every_
     client mutation is covered, including cross-device propagation (the
     initiating tab has its delta from the response, same-device tabs get it via
-    BroadcastChannel, but the user's *other devices* need this poke).
+    BroadcastChannel, but the user's _other devices_ need this poke).
   - **`pokeWorkspace` directly** from non-client writers: Graphile jobs
     (Moneybutler bank sync), webhooks, cron. Coalesce to one call per job rather
     than one per row.
@@ -353,7 +353,7 @@ several workspaces only pulls the one that changed. No database triggers.
   Moneybutler gains its first listener.
 - Each instance subscribes to `workspace_changed`, debounces ~100 ms per anchor
   key, and calls `sendToTopic("anchor:{type}:{id}", JSON.stringify({ type:
-  "workspace-poke", anchor: "{type}:{id}" }))` — the poke **names its anchor** so
+"workspace-poke", anchor: "{type}:{id}" }))` — the poke **names its anchor** so
   a socket holding several workspaces pulls only the one that changed. Skip the
   send (don't error) when no socket is subscribed — for pokes that's normal.
 - **Multi-instance**: every instance `LISTEN`s the same Postgres and pokes its
@@ -401,7 +401,7 @@ Replicache/Zero and Linear model; Figma likewise rejected CRDTs for
 server-authoritative last-writer-wins. It fits here unusually well because
 workspaces are anchored per-member: concurrent writers are mostly one
 person's own devices, so "replay in order, server validates, last writer
-wins" resolves nearly everything, and the residue is *visible failures*, not
+wins" resolves nearly everything, and the residue is _visible failures_, not
 silent merges.
 
 Every observable state is either "what the server said" or "what the server
@@ -445,7 +445,7 @@ here.
 
 ### Level 2 — optimistic overlay, selectively
 
-For mutations that must *appear applied* while offline, add a client-side
+For mutations that must _appear applied_ while offline, add a client-side
 mutator. Elegant fit with existing machinery: server mutations already return
 a `WorkspaceDelta`, so a client mutator is just
 `(workspace, input) → speculative delta`, applied through the same
@@ -483,16 +483,16 @@ workspace-sync (and cedar in Phase 3) → `npm run build`, commit `dist/`, push
 `main` → `./sync-libs.sh` → commit both apps' lock files → land app-side
 wiring per app. Phase boundaries are safe stopping points; within a phase,
 library and app changes must ship together only where an option is newly
-*required* (none are — every new capability is opt-in via provider options).
+_required_ (none are — every new capability is opt-in via provider options).
 
 ## Open questions
 
 - **Moneybutler IDB persistence** — ship with persistence off? (See 2c.)
 - **Navigate-to-arbitrary-anchor** (resolved boundary, not open work): backend
-  `resolveSubscriptions(member)` covers workspaces implied by *who you are* — the
+  `resolveSubscriptions(member)` covers workspaces implied by _who you are_ — the
   admin case (admin ⇒ user + admin workspaces) fits, since that admin workspace
-  is tied to the role, not to some other user. It does *not* cover a workspace
-  implied by *what you navigated to* (e.g. an admin support tool opening one
+  is tied to the role, not to some other user. It does _not_ cover a workspace
+  implied by _what you navigated to_ (e.g. an admin support tool opening one
   specific other user's workspace). That, if ever needed, reintroduces a
   client-initiated subscribe plus an access predicate. Out of scope; flagged so
   it's a conscious boundary. (This supersedes the former "anchor id vs member id

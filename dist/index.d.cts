@@ -1,4 +1,5 @@
 import { n as WorkspaceDelta, r as WorkspaceTableConfig, t as WorkspaceDefinition } from "./types-LCCUSy-n.cjs";
+import { n as createWorkspaceStore, r as workspaceVersionRef, t as WorkspaceStore } from "./store-BZgKstJI.cjs";
 
 //#region src/queries.d.ts
 interface RawQuery {
@@ -18,17 +19,14 @@ interface KnexLike {
 declare function parseInitialWorkspace<T>(definition: WorkspaceDefinition, raw: any): T;
 declare function getWorkspaceDelta(trx: KnexLike, definition: WorkspaceDefinition, anchorId: number | string, since: Date): Promise<WorkspaceDelta>;
 //#endregion
-//#region src/context.d.ts
-declare const workspaceVersionRef: {
-  current: Date | undefined;
-};
+//#region src/apply-delta.d.ts
+/**
+ * Applies a delta to a workspace, preserving structural sharing: rows and table
+ * arrays that the delta does not touch keep their identity, so selectors that
+ * compare by reference only fire for slices that actually changed. Returns the
+ * original workspace unchanged when the delta is a no-op.
+ */
 declare function applyWorkspaceDelta<T>(workspace: T, delta: WorkspaceDelta): T;
-declare function createWorkspaceContext<T>(): {
-  workspaceContext: import("react").Context<T | undefined>;
-  applyDeltaContext: import("react").Context<((delta: WorkspaceDelta) => void) | undefined>;
-  useWorkspace: () => T;
-  useApplyDelta: () => (delta: WorkspaceDelta) => void;
-};
 //#endregion
-export { type RawQuery, type WorkspaceDefinition, type WorkspaceDelta, type WorkspaceTableConfig, applyWorkspaceDelta, buildDeleteQuery, buildInitialQuery, buildUpsertQuery, createWorkspaceContext, getWorkspaceDelta, parseInitialWorkspace, workspaceVersionRef };
+export { type RawQuery, type WorkspaceDefinition, type WorkspaceDelta, type WorkspaceStore, type WorkspaceTableConfig, applyWorkspaceDelta, buildDeleteQuery, buildInitialQuery, buildUpsertQuery, createWorkspaceStore, getWorkspaceDelta, parseInitialWorkspace, workspaceVersionRef };
 //# sourceMappingURL=index.d.cts.map

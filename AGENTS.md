@@ -10,9 +10,9 @@ workspace-sync compiles to `dist/` via tsdown before it is consumed. After a fre
 
 workspace-sync is a small, focused TypeScript library with three export paths:
 
-- **`workspace-sync`** (`src/`) — shared core: types (`WorkspaceDefinition`, `WorkspaceDelta`), SQL query builders (`buildInitialQuery`, `buildUpsertQuery`, `buildDeleteQuery`), delta computation (`getWorkspaceDelta`, `parseInitialWorkspace`), and the in-memory workspace context (`createWorkspaceContext`, `applyWorkspaceDelta`).
+- **`workspace-sync`** (`src/`) — shared core: types (`WorkspaceDefinition`, `WorkspaceDelta`), SQL query builders (`buildInitialQuery`, `buildUpsertQuery`, `buildDeleteQuery`), delta computation (`getWorkspaceDelta`, `parseInitialWorkspace`), and the in-memory workspace store (`createWorkspaceStore`, `applyWorkspaceDelta`).
 - **`workspace-sync/backend`** (`src/backend/`) — `createWorkspaceRouter`: a tRPC router factory that exposes `getFoundation` and `getFoundationDelta` endpoints given a `WorkspaceDefinition`.
-- **`workspace-sync/frontend`** (`src/frontend/`) — `createWorkspaceProvider`: a React provider factory that polls for deltas and maintains workspace state in context.
+- **`workspace-sync/frontend`** (`src/frontend/`) — `createWorkspaceProvider`: a React provider factory that polls for deltas and binds the store to React, including `useWorkspaceSelector` for subscribing to a slice.
 
 **How it works:** The backend builds workspace state from Postgres using raw SQL (aggregated into a single JSON blob). The frontend loads an initial snapshot then polls for deltas every 10 seconds. Both are driven by a `WorkspaceDefinition` that describes which tables and columns to include.
 

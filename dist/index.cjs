@@ -1,11 +1,11 @@
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
 const require_delta = require("./delta-Cju7rIza.cjs");
-const require_context = require("./context-CSF-QrpS.cjs");
-exports.applyWorkspaceDelta = require_context.applyWorkspaceDelta;
+const require_store = require("./store-DMU-E85-.cjs");
+exports.applyWorkspaceDelta = require_store.applyWorkspaceDelta;
 exports.buildDeleteQuery = require_delta.buildDeleteQuery;
 exports.buildInitialQuery = require_delta.buildInitialQuery;
 exports.buildUpsertQuery = require_delta.buildUpsertQuery;
-exports.createWorkspaceContext = require_context.createWorkspaceContext;
+exports.createWorkspaceStore = require_store.createWorkspaceStore;
 exports.getWorkspaceDelta = require_delta.getWorkspaceDelta;
 exports.parseInitialWorkspace = require_delta.parseInitialWorkspace;
-exports.workspaceVersionRef = require_context.workspaceVersionRef;
+exports.workspaceVersionRef = require_store.workspaceVersionRef;
