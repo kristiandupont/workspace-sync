@@ -1,5 +1,5 @@
 import { n as WorkspaceDelta, r as WorkspaceTableConfig, t as WorkspaceDefinition } from "./types-LCCUSy-n.cjs";
-import { n as createWorkspaceStore, r as workspaceVersionRef, t as WorkspaceStore } from "./store-BZgKstJI.cjs";
+import { a as PersistedWorkspace, c as WorkspaceStore, i as WorkspaceMessage, l as createWorkspaceStore, n as createTabCoordinator, o as clearWorkspaceCache, r as workspaceKey, s as readPersistedWorkspace, t as TabCoordinator, u as workspaceVersionRef } from "./index-CImRnVtZ.cjs";
 
 //#region src/queries.d.ts
 interface RawQuery {
@@ -28,5 +28,5 @@ declare function getWorkspaceDelta(trx: KnexLike, definition: WorkspaceDefinitio
  */
 declare function applyWorkspaceDelta<T>(workspace: T, delta: WorkspaceDelta): T;
 //#endregion
-export { type RawQuery, type WorkspaceDefinition, type WorkspaceDelta, type WorkspaceStore, type WorkspaceTableConfig, applyWorkspaceDelta, buildDeleteQuery, buildInitialQuery, buildUpsertQuery, createWorkspaceStore, getWorkspaceDelta, parseInitialWorkspace, workspaceVersionRef };
+export { type PersistedWorkspace, type RawQuery, type TabCoordinator, type WorkspaceDefinition, type WorkspaceDelta, type WorkspaceMessage, type WorkspaceStore, type WorkspaceTableConfig, applyWorkspaceDelta, buildDeleteQuery, buildInitialQuery, buildUpsertQuery, clearWorkspaceCache, createTabCoordinator, createWorkspaceStore, getWorkspaceDelta, parseInitialWorkspace, readPersistedWorkspace, workspaceKey, workspaceVersionRef };
 //# sourceMappingURL=index.d.cts.map

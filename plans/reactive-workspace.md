@@ -276,10 +276,23 @@ unchanged until apps opt in):
 
 ```ts
 {
-  fetchDelta?: (since: Date) => Promise<WorkspaceDelta>; // vanilla-client pull, used by driver + resync
-  persist?: { enabled: boolean; getAnchorId: () => string | number | undefined };
+  fetchDelta?: (since: Date) => Promise<WorkspaceDelta>; // vanilla-client pull, used on boot
+  anchor?: {
+    type: string;                                 // definition.anchor
+    getId: () => string | number | undefined;     // called during render; may use hooks
+  };
+  persist?: boolean;                              // IndexedDB snapshot; requires `anchor`
 }
 ```
+
+**Built with `persist` split out of the anchor options** (the plan originally
+nested `getAnchorId` under `persist`). Tab coordination and persistence both
+need the typed anchor, but 2c wants them separable — tab-sync without
+persistence is a shipping option — so the anchor is its own group and `persist`
+is an independent boolean. `useFoundationQuery` also gained an `{ enabled }`
+argument, so the initial fetch can be skipped on a cache hit; a zero-argument
+implementation still type-checks and simply always runs, which is what keeps
+both apps compiling untouched.
 
 Boot sequence becomes: try IDB hydration → if hit, `setInitial(snapshot)` and
 immediately `fetchDelta(persistedVersion)`; if miss, run the initial query as

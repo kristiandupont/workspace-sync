@@ -8,6 +8,7 @@
 - Column omission (`omittedColumns`) happens in the backend parse layer (`delta.ts`), not in SQL — queries `SELECT *` and the columns are stripped before crossing tRPC.
 - `applyWorkspaceDelta`'s structural sharing is load-bearing, not an optimization: `useWorkspaceSelector` and `byId` both rest on untouched rows and tables keeping their identity. A change that reintroduces wholesale cloning silently turns every selector into a re-render on every delta.
 - `workspaceVersionRef` is a module-level singleton because Cedar's tRPC client reads it to set the `x-workspace-version` header. It therefore assumes **one workspace per client** — a second concurrent store would overwrite it. Revisit when a client first holds two workspaces at once (see `plans/reactive-workspace.md`).
+- **The store is never reset, so an anchor must not change under a live provider.** `setInitial` replaces the contents, but nothing clears them when `getAnchorId` starts returning a different id — the previous anchor's data would stay on screen until the new workspace loads. Both apps mount the provider inside their logged-in gate, so logout unmounts it; that is what this relies on. Logout must also `clearWorkspaceCache()` — see `tab-coordinator/`.
 
 **Key Files**:
 
@@ -16,7 +17,8 @@
 - `delta.ts`: Computes deltas and parses initial workspace snapshots from raw SQL results.
 - `apply-delta.ts`: `applyWorkspaceDelta` — folds a delta into a workspace, preserving references for everything the delta did not touch.
 - `store.ts`: `createWorkspaceStore` — the framework-agnostic `subscribe`/`getSnapshot` holder React binds to, plus `workspaceVersionRef`. No React import; keep it that way (a future Crank adapter is meant to bind to this contract).
+- `tab-coordinator/`: `createTabCoordinator` — one driver tab per workspace, cross-tab deltas, and the IndexedDB snapshot cache. Browser APIs, no React.
 - `utils.ts`: Internal shared utilities.
 - `index.ts`: Public entry point for the `workspace-sync` export path.
 
-**Relationships**: `backend/` and `frontend/` import from this folder; nothing here imports from them.
+**Relationships**: `backend/` and `frontend/` import from this folder; nothing here imports from them. `tab-coordinator/` is browser-only but lives here rather than in `frontend/`, which is specifically the React adapter — it wraps the store and stays framework-free for the same reason the store does.

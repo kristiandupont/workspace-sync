@@ -5,3 +5,14 @@ export { getWorkspaceDelta, parseInitialWorkspace } from "./delta";
 export { applyWorkspaceDelta } from "./apply-delta";
 export type { WorkspaceStore } from "./store";
 export { createWorkspaceStore, workspaceVersionRef } from "./store";
+export type {
+  PersistedWorkspace,
+  TabCoordinator,
+  WorkspaceMessage,
+} from "./tab-coordinator";
+export {
+  clearWorkspaceCache,
+  createTabCoordinator,
+  readPersistedWorkspace,
+  workspaceKey,
+} from "./tab-coordinator";

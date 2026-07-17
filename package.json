@@ -4,15 +4,35 @@
   "private": true,
   "main": "./dist/index.cjs",
   "exports": {
-    ".":          { "require": "./dist/index.cjs",    "default": "./dist/index.cjs",    "types": "./dist/index.d.cts" },
-    "./backend":  { "require": "./dist/backend.cjs",  "default": "./dist/backend.cjs",  "types": "./dist/backend.d.cts" },
-    "./frontend": { "require": "./dist/frontend.cjs", "default": "./dist/frontend.cjs", "types": "./dist/frontend.d.cts" },
-    "./kanel":    { "require": "./kanel/index.js",    "default": "./kanel/index.js",    "types": "./kanel/WorkspaceConfig.d.ts" }
+    ".": {
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.cjs",
+      "types": "./dist/index.d.cts"
+    },
+    "./backend": {
+      "require": "./dist/backend.cjs",
+      "default": "./dist/backend.cjs",
+      "types": "./dist/backend.d.cts"
+    },
+    "./frontend": {
+      "require": "./dist/frontend.cjs",
+      "default": "./dist/frontend.cjs",
+      "types": "./dist/frontend.d.cts"
+    },
+    "./kanel": {
+      "require": "./kanel/index.js",
+      "default": "./kanel/index.js",
+      "types": "./kanel/WorkspaceConfig.d.ts"
+    }
   },
   "typesVersions": {
     "*": {
-      "backend":  ["dist/backend.d.cts"],
-      "frontend": ["dist/frontend.d.cts"]
+      "backend": [
+        "dist/backend.d.cts"
+      ],
+      "frontend": [
+        "dist/frontend.d.cts"
+      ]
     }
   },
   "scripts": {
@@ -38,6 +58,7 @@
     "@typescript-eslint/eslint-plugin": "^8.59.4",
     "@typescript-eslint/parser": "^8.59.4",
     "eslint": "^10.4.0",
+    "fake-indexeddb": "^6.2.5",
     "jsdom": "^26.1.0",
     "kanel": "^4.0.0",
     "react": "^19.2.6",

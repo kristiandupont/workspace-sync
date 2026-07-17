@@ -1,5 +1,5 @@
 import { n as WorkspaceDelta } from "./types-LCCUSy-n.cjs";
-import { t as WorkspaceStore } from "./store-BZgKstJI.cjs";
+import { c as WorkspaceStore, o as clearWorkspaceCache } from "./index-CImRnVtZ.cjs";
 import { ComponentType, FC, ReactNode } from "react";
 
 //#region src/frontend/by-id.d.ts
@@ -28,7 +28,14 @@ declare function shallowEqual<T>(a: T, b: T): boolean;
 //#endregion
 //#region src/frontend/index.d.ts
 declare function createWorkspaceProvider<TFoundation>(options: {
-  useFoundationQuery: () => {
+  /**
+   * `queryOptions.enabled` is false while a cached snapshot is booting the
+   * store. Forward it to skip the full fetch on a cache hit; ignoring it costs
+   * only the fetch the cache would have saved.
+   */
+  useFoundationQuery: (queryOptions: {
+    enabled: boolean;
+  }) => {
     data: TFoundation | undefined;
   };
   useFoundationDeltaQuery: (input: {
@@ -42,6 +49,31 @@ declare function createWorkspaceProvider<TFoundation>(options: {
   Spinner: ComponentType<{
     className?: string;
   }>;
+  /**
+   * Pulls a delta outside the React render cycle (Cedar's vanilla tRPC client).
+   * Used to catch a cached snapshot up on boot.
+   */
+  fetchDelta?: (since: Date) => Promise<WorkspaceDelta>;
+  /**
+   * Turns on multi-tab coordination: one tab polls, the rest are fed over a
+   * BroadcastChannel. Everything is keyed by the *typed* anchor, since an
+   * anchor id is only unique within its type.
+   */
+  anchor?: {
+    /** The `anchor` of the `WorkspaceDefinition` — e.g. `"member"`. */type: string;
+    /**
+     * Called during render, so it may use hooks provided it calls them
+     * unconditionally. Returns undefined when the anchor is not known yet, and
+     * coordination waits.
+     */
+    getId: () => string | number | undefined;
+  };
+  /**
+   * Cache the snapshot in IndexedDB so reloads and new tabs render instantly.
+   * Requires `anchor`. Off by default: it puts workspace data unencrypted in
+   * browser storage, which is the app's call.
+   */
+  persist?: boolean;
 }): {
   storeContext: import("react").Context<WorkspaceStore<TFoundation> | undefined>;
   useWorkspace: () => TFoundation;
@@ -58,5 +90,5 @@ declare function createWorkspaceProvider<TFoundation>(options: {
   }>;
 };
 //#endregion
-export { byId, createWorkspaceProvider, shallowEqual };
+export { byId, clearWorkspaceCache, createWorkspaceProvider, shallowEqual };
 //# sourceMappingURL=frontend.d.cts.map
