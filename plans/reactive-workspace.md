@@ -162,6 +162,10 @@ Plain TypeScript, no React import. `applyDelta` uses `applyWorkspaceDelta`,
 updates the store's version, keeps `workspaceVersionRef.current` in sync (the
 ref stays, since cedar's header wiring reads it), and notifies subscribers.
 
+Built as specified — but that ref is a module-level singleton, so it quietly
+assumes **one workspace per client**, which the rest of this plan does not. See
+the open question at the end; it blocks Phase 3, not Phase 1.
+
 ### 1b. Fix structural sharing in `applyWorkspaceDelta` — the precondition for selectors
 
 This is not a nice-to-have; it is the mechanism the whole selector feature rests
@@ -487,6 +491,27 @@ _required_ (none are — every new capability is opt-in via provider options).
 
 ## Open questions
 
+- **`workspaceVersionRef` is a singleton, but a client may hold several
+  workspaces** (found while building Phase 1; nothing is broken today). Cedar's
+  tRPC client reads the module-level ref to set `x-workspace-version` on *every*
+  request, and `protectedMutationWithDelta` computes the delta it returns from
+  that header. With two live stores, whichever applied a delta last owns the ref,
+  so a mutation can be sent with the wrong workspace's version. The harmful
+  direction is a header version *newer* than the target store's: the mutation
+  returns a delta computed since the other workspace's version, the §1a guard
+  sees the version advance and applies it, the store's version jumps — and the
+  changes in between are never requested again. That is a silent permanent gap,
+  not a stale read. (The reverse direction is benign: a delta computed since an
+  older version is a superset, and upserts are idempotent.) Today only a full
+  `getFoundation` heals it, which a reload happens to do — Phase 2's IDB
+  bootstrap would remove even that accidental cure.
+  **Resolve before a second workspace ships**, i.e. before Phase 3's
+  `resolveSubscriptions` makes the admin/org workspace real. Leaning: retire the
+  single ref for a name-keyed registry and send `x-workspace-version` as a JSON
+  map (`{ foundation: iso, admin: iso }`) that `protectedMutationWithDelta` looks
+  up by `definition.name` — one header carrying every workspace survives tRPC's
+  request batching, where a per-call header would not. Also noted in
+  `workspace-sync/src/AGENTS.md`.
 - **Moneybutler IDB persistence** — ship with persistence off? (See 2c.)
 - **Navigate-to-arbitrary-anchor** (resolved boundary, not open work): backend
   `resolveSubscriptions(member)` covers workspaces implied by _who you are_ — the
