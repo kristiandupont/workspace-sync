@@ -1,6 +1,7 @@
 import type { ComponentType, FC, ReactNode } from "react";
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -19,7 +20,12 @@ export { byId } from "./by-id";
 export { shallowEqual } from "./shallow-equal";
 export { clearWorkspaceCache } from "../tab-coordinator";
 
-const POLL_INTERVAL_MS = 10000;
+// Without server push, polling is the only update path, so keep it snappy.
+const POLL_INTERVAL_FALLBACK_MS = 10000;
+// With a `pokeTarget`, pushes carry changes within moments and the poll is
+// demoted to a correctness backstop (dropped pokes, silently-dead mobile
+// sockets), so it can run far less often.
+const POLL_INTERVAL_PUSH_MS = 60000;
 
 export function createWorkspaceProvider<TFoundation>(options: {
   /**
@@ -61,6 +67,17 @@ export function createWorkspaceProvider<TFoundation>(options: {
    * browser storage, which is the app's call.
    */
   persist?: boolean;
+  /**
+   * Server-push source: an `EventTarget` that emits the websocket's `message`
+   * events (Cedar's `WsProvider` target). The driver tab listens for a
+   * `{ type: "workspace-poke", anchor }` message whose `anchor` matches this
+   * provider's key and pulls a delta via `fetchDelta` — the same path as a
+   * poll, so duplicate/self pokes are absorbed by the store's version guard. A
+   * client holding several workspaces shares one target; each provider filters
+   * for its own anchor. Reconnect and tab-refocus also trigger a catch-up pull.
+   * Requires `anchor` and `fetchDelta`; without it the provider just polls.
+   */
+  pokeTarget?: EventTarget;
 }) {
   const {
     useFoundationQuery,
@@ -69,6 +86,7 @@ export function createWorkspaceProvider<TFoundation>(options: {
     fetchDelta,
     anchor,
     persist = false,
+    pokeTarget,
   } = options;
 
   const storeContext = createContext<WorkspaceStore<TFoundation> | undefined>(
@@ -180,12 +198,15 @@ export function createWorkspaceProvider<TFoundation>(options: {
     const version = store.getVersion();
 
     // Only the driver polls — the other tabs are fed from its results over the
-    // channel, so N tabs cost one tab's worth of traffic.
+    // channel, so N tabs cost one tab's worth of traffic. A `pokeTarget` makes
+    // push the primary path, so the poll drops to a slow correctness backstop.
     const deltaQuery = useFoundationDeltaQuery(
       { since: version! },
       {
         enabled: Boolean(version) && isDriver,
-        refetchInterval: POLL_INTERVAL_MS,
+        refetchInterval: pokeTarget
+          ? POLL_INTERVAL_PUSH_MS
+          : POLL_INTERVAL_FALLBACK_MS,
       },
     );
 
@@ -194,6 +215,68 @@ export function createWorkspaceProvider<TFoundation>(options: {
     useEffect(() => {
       if (deltaQuery.data) applyDelta(deltaQuery.data);
     }, [deltaQuery.data, applyDelta]);
+
+    // A one-shot delta pull outside the poll cadence, used by push, reconnect
+    // and refocus. Driver-only (siblings are fed over the channel), and it goes
+    // through the broadcasting `applyDelta`, so it lands identically to a poll —
+    // including feeding the sibling tabs and being no-op'd by the version guard
+    // when nothing actually changed (e.g. a self-poke after one's own mutation).
+    const pullNow = useCallback(() => {
+      if (!isDriver || !fetchDelta) return;
+      const since = store.getVersion();
+      if (!since) return;
+      void fetchDelta(since)
+        .then((delta) => applyDelta(delta))
+        .catch(() => {
+          // Offline or a `since` the server won't serve: the fallback poll and
+          // the next poke are the recovery, so swallow rather than surface.
+        });
+    }, [isDriver, store, applyDelta]);
+
+    // Server push: the driver pulls when its own workspace is poked, and also
+    // on websocket reconnect (Cedar's WsProvider dispatches `open`), since a
+    // reconnect may have missed pokes while the socket was down.
+    useEffect(() => {
+      if (!pokeTarget || !isDriver || key === undefined) return;
+
+      const onMessage = (event: Event): void => {
+        const { data } = event as MessageEvent;
+        if (typeof data !== "string") return;
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(data);
+        } catch {
+          return; // Not JSON (e.g. "pong") — not for us.
+        }
+        if (
+          parsed !== null &&
+          typeof parsed === "object" &&
+          (parsed as { type?: unknown }).type === "workspace-poke" &&
+          (parsed as { anchor?: unknown }).anchor === key
+        ) {
+          pullNow();
+        }
+      };
+      const onOpen = (): void => pullNow();
+
+      pokeTarget.addEventListener("message", onMessage);
+      pokeTarget.addEventListener("open", onOpen);
+      return () => {
+        pokeTarget.removeEventListener("message", onMessage);
+        pokeTarget.removeEventListener("open", onOpen);
+      };
+    }, [isDriver, key, pullNow]);
+
+    // Mobile sockets die silently in the background; catch up when the tab is
+    // shown again rather than waiting out the fallback poll.
+    useEffect(() => {
+      if (!isDriver || typeof document === "undefined") return;
+      const onVisible = (): void => {
+        if (document.visibilityState === "visible") pullNow();
+      };
+      document.addEventListener("visibilitychange", onVisible);
+      return () => document.removeEventListener("visibilitychange", onVisible);
+    }, [isDriver, pullNow]);
 
     // The store with its `applyDelta` swapped for the broadcasting one, so a
     // delta from `useApplyDelta` (a mutation response) reaches sibling tabs

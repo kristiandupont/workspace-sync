@@ -80,6 +80,7 @@ function createHarness(
     anchorId?: number;
     persist?: boolean;
     fetchDelta?: (since: Date) => Promise<WorkspaceDelta>;
+    pokeTarget?: EventTarget;
   } = {},
 ) {
   const foundationQueryEnabled: boolean[] = [];
@@ -107,6 +108,7 @@ function createHarness(
         ? undefined
         : { type: "member", getId: () => options.anchorId },
     persist: options.persist,
+    pokeTarget: options.pokeTarget,
   });
 
   return {
@@ -347,5 +349,144 @@ describe("multi-tab", () => {
     harness.emitDelta(renameDelta("Alice Updated"));
 
     expect(screen.getByText("Alice Updated")).toBeDefined();
+  });
+});
+
+describe("server push", () => {
+  const poke = (target: EventTarget, anchor: string) =>
+    act(() => {
+      target.dispatchEvent(
+        new MessageEvent("message", {
+          data: JSON.stringify({ type: "workspace-poke", anchor }),
+        }),
+      );
+    });
+
+  it("pulls a delta when its own anchor is poked", async () => {
+    const anchorId = nextAnchorId();
+    const target = new EventTarget();
+    const fetchDelta = vi.fn().mockResolvedValue(renameDelta("Alice Poked"));
+    const harness = createHarness({ anchorId, fetchDelta, pokeTarget: target });
+
+    render(
+      <harness.WorkspaceProvider>
+        <Name useWorkspace={harness.useWorkspace} />
+      </harness.WorkspaceProvider>,
+    );
+    harness.emitFoundation(makeFoundation());
+    await waitFor(() => expect(harness.lastDeltaQueryEnabled()).toBe(true));
+
+    poke(target, workspaceKey("member", anchorId));
+
+    await waitFor(() => expect(screen.getByText("Alice Poked")).toBeDefined());
+    expect(fetchDelta).toHaveBeenCalledWith(v1);
+  });
+
+  it("ignores a poke for a different anchor", async () => {
+    const anchorId = nextAnchorId();
+    const target = new EventTarget();
+    const fetchDelta = vi.fn().mockResolvedValue(renameDelta("Nope"));
+    const harness = createHarness({ anchorId, fetchDelta, pokeTarget: target });
+
+    render(
+      <harness.WorkspaceProvider>
+        <Name useWorkspace={harness.useWorkspace} />
+      </harness.WorkspaceProvider>,
+    );
+    harness.emitFoundation(makeFoundation());
+    await waitFor(() => expect(harness.lastDeltaQueryEnabled()).toBe(true));
+
+    poke(target, workspaceKey("member", anchorId + 999));
+
+    expect(fetchDelta).not.toHaveBeenCalled();
+    expect(screen.getByText("Alice")).toBeDefined();
+  });
+
+  it("ignores non-poke messages on the same target (e.g. chat, pong)", async () => {
+    const anchorId = nextAnchorId();
+    const target = new EventTarget();
+    const fetchDelta = vi.fn().mockResolvedValue(renameDelta("Nope"));
+    const harness = createHarness({ anchorId, fetchDelta, pokeTarget: target });
+
+    render(
+      <harness.WorkspaceProvider>
+        <Name useWorkspace={harness.useWorkspace} />
+      </harness.WorkspaceProvider>,
+    );
+    harness.emitFoundation(makeFoundation());
+    await waitFor(() => expect(harness.lastDeltaQueryEnabled()).toBe(true));
+
+    act(() => {
+      target.dispatchEvent(new MessageEvent("message", { data: "pong" }));
+      target.dispatchEvent(
+        new MessageEvent("message", {
+          data: JSON.stringify({ type: "new-message", message: {} }),
+        }),
+      );
+    });
+
+    expect(fetchDelta).not.toHaveBeenCalled();
+  });
+
+  it("pulls on websocket reconnect (open event)", async () => {
+    const anchorId = nextAnchorId();
+    const target = new EventTarget();
+    const fetchDelta = vi.fn().mockResolvedValue(renameDelta("Alice Reconnected"));
+    const harness = createHarness({ anchorId, fetchDelta, pokeTarget: target });
+
+    render(
+      <harness.WorkspaceProvider>
+        <Name useWorkspace={harness.useWorkspace} />
+      </harness.WorkspaceProvider>,
+    );
+    harness.emitFoundation(makeFoundation());
+    await waitFor(() => expect(harness.lastDeltaQueryEnabled()).toBe(true));
+
+    act(() => target.dispatchEvent(new Event("open")));
+
+    await waitFor(() =>
+      expect(screen.getByText("Alice Reconnected")).toBeDefined(),
+    );
+  });
+
+  it("only the driver pulls; the passenger is fed over the channel", async () => {
+    const anchorId = nextAnchorId();
+    const target = new EventTarget();
+    const driverFetch = vi.fn().mockResolvedValue(renameDelta("Alice Pushed"));
+    const passengerFetch = vi.fn();
+    const driver = createHarness({
+      anchorId,
+      fetchDelta: driverFetch,
+      pokeTarget: target,
+    });
+    const passenger = createHarness({
+      anchorId,
+      fetchDelta: passengerFetch,
+      pokeTarget: target,
+    });
+
+    render(
+      <driver.WorkspaceProvider>
+        <Name useWorkspace={driver.useWorkspace} />
+      </driver.WorkspaceProvider>,
+    );
+    driver.emitFoundation(makeFoundation());
+
+    render(
+      <passenger.WorkspaceProvider>
+        <Name useWorkspace={passenger.useWorkspace} />
+      </passenger.WorkspaceProvider>,
+    );
+    passenger.emitFoundation(makeFoundation());
+
+    await waitFor(() => expect(driver.lastDeltaQueryEnabled()).toBe(true));
+
+    poke(target, workspaceKey("member", anchorId));
+
+    // Both tabs show it, but only the driver hit the network for the delta.
+    await waitFor(() =>
+      expect(screen.getAllByText("Alice Pushed")).toHaveLength(2),
+    );
+    expect(passengerFetch).not.toHaveBeenCalled();
   });
 });

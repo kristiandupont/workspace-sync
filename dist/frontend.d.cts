@@ -74,6 +74,17 @@ declare function createWorkspaceProvider<TFoundation>(options: {
    * browser storage, which is the app's call.
    */
   persist?: boolean;
+  /**
+   * Server-push source: an `EventTarget` that emits the websocket's `message`
+   * events (Cedar's `WsProvider` target). The driver tab listens for a
+   * `{ type: "workspace-poke", anchor }` message whose `anchor` matches this
+   * provider's key and pulls a delta via `fetchDelta` — the same path as a
+   * poll, so duplicate/self pokes are absorbed by the store's version guard. A
+   * client holding several workspaces shares one target; each provider filters
+   * for its own anchor. Reconnect and tab-refocus also trigger a catch-up pull.
+   * Requires `anchor` and `fetchDelta`; without it the provider just polls.
+   */
+  pokeTarget?: EventTarget;
 }): {
   storeContext: import("react").Context<WorkspaceStore<TFoundation> | undefined>;
   useWorkspace: () => TFoundation;

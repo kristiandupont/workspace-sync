@@ -127,9 +127,10 @@ function shallowEqual(a, b) {
 }
 //#endregion
 //#region src/frontend/index.tsx
-const POLL_INTERVAL_MS = 1e4;
+const POLL_INTERVAL_FALLBACK_MS = 1e4;
+const POLL_INTERVAL_PUSH_MS = 6e4;
 function createWorkspaceProvider(options) {
-	const { useFoundationQuery, useFoundationDeltaQuery, Spinner, fetchDelta, anchor, persist = false } = options;
+	const { useFoundationQuery, useFoundationDeltaQuery, Spinner, fetchDelta, anchor, persist = false, pokeTarget } = options;
 	const storeContext = (0, react.createContext)(void 0);
 	const emptyStore = require_tab_coordinator.createWorkspaceStore();
 	function useStore() {
@@ -191,11 +192,54 @@ function createWorkspaceProvider(options) {
 		const version = store.getVersion();
 		const deltaQuery = useFoundationDeltaQuery({ since: version }, {
 			enabled: Boolean(version) && isDriver,
-			refetchInterval: POLL_INTERVAL_MS
+			refetchInterval: pokeTarget ? POLL_INTERVAL_PUSH_MS : POLL_INTERVAL_FALLBACK_MS
 		});
 		(0, react.useEffect)(() => {
 			if (deltaQuery.data) applyDelta(deltaQuery.data);
 		}, [deltaQuery.data, applyDelta]);
+		const pullNow = (0, react.useCallback)(() => {
+			if (!isDriver || !fetchDelta) return;
+			const since = store.getVersion();
+			if (!since) return;
+			fetchDelta(since).then((delta) => applyDelta(delta)).catch(() => {});
+		}, [
+			isDriver,
+			store,
+			applyDelta
+		]);
+		(0, react.useEffect)(() => {
+			if (!pokeTarget || !isDriver || key === void 0) return;
+			const onMessage = (event) => {
+				const { data } = event;
+				if (typeof data !== "string") return;
+				let parsed;
+				try {
+					parsed = JSON.parse(data);
+				} catch {
+					return;
+				}
+				if (parsed !== null && typeof parsed === "object" && parsed.type === "workspace-poke" && parsed.anchor === key) pullNow();
+			};
+			const onOpen = () => pullNow();
+			pokeTarget.addEventListener("message", onMessage);
+			pokeTarget.addEventListener("open", onOpen);
+			return () => {
+				pokeTarget.removeEventListener("message", onMessage);
+				pokeTarget.removeEventListener("open", onOpen);
+			};
+		}, [
+			isDriver,
+			key,
+			pullNow
+		]);
+		(0, react.useEffect)(() => {
+			if (!isDriver || typeof document === "undefined") return;
+			const onVisible = () => {
+				if (document.visibilityState === "visible") pullNow();
+			};
+			document.addEventListener("visibilitychange", onVisible);
+			return () => document.removeEventListener("visibilitychange", onVisible);
+		}, [isDriver, pullNow]);
 		const contextStore = (0, react.useMemo)(() => ({
 			...store,
 			applyDelta

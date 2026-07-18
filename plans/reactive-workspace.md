@@ -234,7 +234,20 @@ files in both apps.
 
 ---
 
-## Phase 2 — Multi-tab driver + IndexedDB bootstrap (workspace-sync, then both apps)
+## Phase 2 [DONE] — Multi-tab driver + IndexedDB bootstrap (workspace-sync, then both apps)
+
+Built as specified. The library landed as a `src/tab-coordinator/` folder
+(driver election, channel, snapshot store, coordinator) rather than a single
+file, plus two frontend hooks (`use-cached-bootstrap`, `use-tab-coordination`).
+Tests run against Node's real `navigator.locks`/`BroadcastChannel` and
+`fake-indexeddb`. App decisions taken at integration: **persistence is gated on
+`isInstalledApp()`** — a Capacitor native build or a home-screen PWA — in _both_
+apps, the compromise for Moneybutler's financial-data concern (fast boot where
+the device is personal, full fetch in a browser tab that might be shared). The
+anchor id comes from `useSessionMemberId` (decodes `memberId` from the session
+JWT). Logout routes through a new `logOut()` helper (`auth/session.ts`) that
+drops the token _and_ calls `clearWorkspaceCache()`; provider unmount (which
+tears down the coordinator) already happens via the logged-in gate.
 
 ### 2a. `src/tab-coordinator.ts` (new; browser APIs, still no React)
 
