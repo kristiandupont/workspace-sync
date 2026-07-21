@@ -334,7 +334,7 @@ single webview trivially becomes driver; app still works.
 
 ---
 
-## Phase 3 — Server push via app-level poke/pull (apps + cedar, small workspace-sync addition)
+## Phase 3 [DONE] — Server push via app-level poke/pull (apps + cedar, small workspace-sync addition)
 
 The poke is emitted by the backend code that writes, carried between instances
 by `pg_notify`, routed to sockets by anchor topic, and named so a client with
@@ -519,11 +519,11 @@ _required_ (none are — every new capability is opt-in via provider options).
 
 - **`workspaceVersionRef` is a singleton, but a client may hold several
   workspaces** (found while building Phase 1; nothing is broken today). Cedar's
-  tRPC client reads the module-level ref to set `x-workspace-version` on *every*
+  tRPC client reads the module-level ref to set `x-workspace-version` on _every_
   request, and `protectedMutationWithDelta` computes the delta it returns from
   that header. With two live stores, whichever applied a delta last owns the ref,
   so a mutation can be sent with the wrong workspace's version. The harmful
-  direction is a header version *newer* than the target store's: the mutation
+  direction is a header version _newer_ than the target store's: the mutation
   returns a delta computed since the other workspace's version, the §1a guard
   sees the version advance and applies it, the store's version jumps — and the
   changes in between are never requested again. That is a silent permanent gap,
