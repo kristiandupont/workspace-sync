@@ -1,5 +1,5 @@
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-const require_tab_coordinator = require("./tab-coordinator-BkifYIlz.cjs");
+const require_tab_coordinator = require("./tab-coordinator-Emy-d7np.cjs");
 let react = require("react");
 let use_sync_external_store_shim_with_selector = require("use-sync-external-store/shim/with-selector");
 let react_jsx_runtime = require("react/jsx-runtime");

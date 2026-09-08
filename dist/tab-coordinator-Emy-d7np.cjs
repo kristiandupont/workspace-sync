@@ -1,4 +1,4 @@
-const require_utils = require("./utils-DBUNJZXG.cjs");
+const require_utils = require("./utils-B7O_ckb0.cjs");
 //#region src/apply-delta.ts
 /**
 * Applies a delta to a workspace, preserving structural sharing: rows and table
@@ -396,4 +396,4 @@ Object.defineProperty(exports, "workspaceVersionRef", {
 	}
 });
 
-//# sourceMappingURL=tab-coordinator-BkifYIlz.cjs.map
+//# sourceMappingURL=tab-coordinator-Emy-d7np.cjs.map

@@ -1,6 +1,6 @@
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-const require_delta = require("./delta-Cju7rIza.cjs");
-const require_tab_coordinator = require("./tab-coordinator-BkifYIlz.cjs");
+const require_delta = require("./delta-CrTvaZWl.cjs");
+const require_tab_coordinator = require("./tab-coordinator-Emy-d7np.cjs");
 exports.applyWorkspaceDelta = require_tab_coordinator.applyWorkspaceDelta;
 exports.buildDeleteQuery = require_delta.buildDeleteQuery;
 exports.buildInitialQuery = require_delta.buildInitialQuery;

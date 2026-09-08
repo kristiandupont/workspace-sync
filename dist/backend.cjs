@@ -1,5 +1,5 @@
 Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-const require_delta = require("./delta-Cju7rIza.cjs");
+const require_delta = require("./delta-CrTvaZWl.cjs");
 let zod = require("zod");
 //#region src/backend/index.ts
 function createWorkspaceRouter(foundationDefinition, options) {
@@ -13,7 +13,8 @@ function createWorkspaceRouter(foundationDefinition, options) {
 			return require_delta.parseInitialWorkspace(foundationDefinition, response.rows[0][`${foundationDefinition.name}_workspace`]);
 		}),
 		getFoundationDelta: protectedProcedure.input(zod.z.object({ since: zod.z.date() })).query(async ({ ctx, input }) => {
-			return require_delta.getWorkspaceDelta(getTrx(), foundationDefinition, getUserId(ctx), input.since);
+			const trx = getTrx();
+			return require_delta.getWorkspaceDelta(trx, foundationDefinition, getUserId(ctx), input.since);
 		})
 	});
 }

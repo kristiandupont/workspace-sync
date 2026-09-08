@@ -29,4 +29,4 @@ interface WorkspaceDelta {
 }
 //#endregion
 export { WorkspaceDelta as n, WorkspaceTableConfig as r, WorkspaceDefinition as t };
-//# sourceMappingURL=types-LCCUSy-n.d.cts.map
+//# sourceMappingURL=types-CDHUSqEO.d.cts.map

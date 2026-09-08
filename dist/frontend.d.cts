@@ -1,7 +1,6 @@
-import { n as WorkspaceDelta } from "./types-LCCUSy-n.cjs";
-import { c as WorkspaceStore, o as clearWorkspaceCache } from "./index-CImRnVtZ.cjs";
+import { n as WorkspaceDelta } from "./types-CDHUSqEO.cjs";
+import { i as WorkspaceStore, n as clearWorkspaceCache } from "./snapshot-store-Cw1-oYZ4.cjs";
 import { ComponentType, FC, ReactNode } from "react";
-
 //#region src/frontend/by-id.d.ts
 /**
  * Id-index for a workspace table, memoized on the array's identity.
@@ -13,7 +12,7 @@ import { ComponentType, FC, ReactNode } from "react";
  * table changes. Row selectors become `w => byId(w.transactions).get(id)`:
  * O(1), and referentially stable across unrelated deltas.
  */
-declare function byId<TRow extends {
+export declare function byId<TRow extends {
   id: number | string;
 }>(rows: readonly TRow[]): Map<TRow["id"], TRow>;
 //#endregion
@@ -24,10 +23,10 @@ declare function byId<TRow extends {
  * array each run (`w => ({ a: w.a, b: w.b })`), which `Object.is` would treat
  * as changed every time.
  */
-declare function shallowEqual<T>(a: T, b: T): boolean;
+export declare function shallowEqual<T>(a: T, b: T): boolean;
 //#endregion
 //#region src/frontend/index.d.ts
-declare function createWorkspaceProvider<TFoundation>(options: {
+export declare function createWorkspaceProvider<TFoundation>(options: {
   /**
    * `queryOptions.enabled` is false while a cached snapshot is booting the
    * store. Forward it to skip the full fetch on a cache hit; ignoring it costs
@@ -60,7 +59,8 @@ declare function createWorkspaceProvider<TFoundation>(options: {
    * anchor id is only unique within its type.
    */
   anchor?: {
-    /** The `anchor` of the `WorkspaceDefinition` — e.g. `"member"`. */type: string;
+    /** The `anchor` of the `WorkspaceDefinition` — e.g. `"member"`. */
+    type: string;
     /**
      * Called during render, so it may use hooks provided it calls them
      * unconditionally. Returns undefined when the anchor is not known yet, and
@@ -101,5 +101,5 @@ declare function createWorkspaceProvider<TFoundation>(options: {
   }>;
 };
 //#endregion
-export { byId, clearWorkspaceCache, createWorkspaceProvider, shallowEqual };
+export { clearWorkspaceCache };
 //# sourceMappingURL=frontend.d.cts.map

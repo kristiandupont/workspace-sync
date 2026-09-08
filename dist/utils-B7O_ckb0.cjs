@@ -30,4 +30,4 @@ Object.defineProperty(exports, "snakeToCamelPlural", {
 	}
 });
 
-//# sourceMappingURL=utils-DBUNJZXG.cjs.map
+//# sourceMappingURL=utils-B7O_ckb0.cjs.map
